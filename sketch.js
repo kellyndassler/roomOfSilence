@@ -258,7 +258,7 @@ class Particle {
 
     let strokeRatio = this.stroke * equity;
 
-    //d efine a ratio of potentiality for stroke widths (equity slider)
+    //define a ratio of potentiality for stroke widths (equity slider)
     // this is kind of a mess because there are different ratios at different breakpoints
     // I don't advise messing with it
     if (equity <= 2) {
@@ -374,40 +374,6 @@ class Particle {
   }
 }
 
-// function setup() {
-//   createCanvas(...settings.particlesCanvasSize);
-// //   canvas.parent('sketch-container');
-// //   //video setup
-// //   video = createCapture(VIDEO);
-// //   // Hide the video element, and just show the canvas
-// //   video.hide();
-
-// //   //handpose model setup
-// //   setupHandPose(video);
-
-//   //setup web serial for arduino connection
-//   setupWebSerial();
-
-//   // Add in a lil <p> element to provide messages. This is optional
-//   pHtmlMsg = createP(
-//     "Click anywhere on this page to open the serial connection dialog"
-//   );
-
-//   //set framerate for visualization
-//   frameRate(30);
-
-//   //set values for sliders
-//   sliders = {
-//     num: select("#numSlider"), // number of particles
-//     equity: select("#equitySlider"),
-//     climate: select("#climateSlider"),
-//     surveil: select("#surveilSlider"),
-//   };
-
-//   //setup particles for visualization
-//   setupParticles();
-// }
-
 function drawHand(handPose, videoSketch) {
   // Draw keypoints. While each keypoints supplies a 3D point (x,y,z), we only draw
   // the x, y point.
@@ -475,54 +441,9 @@ const moveParticles = (sketch) => {
   }
 };
 
-// // function draw() {
-//   wipeScreen();
-// //   image(video, 0, 0, width, height);
-
-// //   if (!isHandPoseModelInitialized) {
-// //     background(100);
-// //     push();
-// //     textSize(32);
-// //     textAlign(CENTER);
-// //     fill(255);
-// //     noStroke();
-// //     text("Waiting for HandPose model to load...", width / 2, height / 2);
-// //     pop();
-// //   }
-
-// //   if (curHandPose) {
-// //     drawHand(curHandPose);
-// //     drawBoundingBox(curHandPose);
-
-// //     // draw palm info
-// //     noFill();
-// //     stroke(255);
-// //     const palmBase = curHandPose.landmarks[0];
-// //     circle(palmBase[0], palmBase[1], kpSize);
-
-// //     noStroke();
-// //     fill(255);
-// //     text(
-// //       nf(palmXNormalized, 1, 4),
-// //       palmBase[0] + kpSize,
-// //       palmBase[1] + textSize() / 2
-// //     );
-// //   }
-
-//   updateParams();
-//   moveParticles();
-// // }
-
 let particlesSketch = new p5((sketch) => {
   sketch.setup = () => {
     sketch.createCanvas(...settings.particlesCanvasSize);
-    //setup web serial for arduino connection
-    // setupWebSerial();
-
-    // // Add in a lil <p> element to provide messages. This is optional
-    // pHtmlMsg = sketch.createP(
-    //   "Click anywhere on this page to open the serial connection dialog"
-    // );
 
     //set framerate for visualization
     sketch.frameRate(30);
