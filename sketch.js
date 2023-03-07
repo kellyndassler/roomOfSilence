@@ -60,6 +60,9 @@ const settings = {
   videoCanvasSize: [640, 500],
 };
 
+let devicesList;
+let videoSource;
+
 const pi = 3.1415926535;
 
 // chladni 2D closed-form solution - returns between -1 and 1
@@ -86,33 +89,44 @@ function onNewHandPosePrediction(predictions) {
     const palmBase = curHandPose.landmarks[0];
     palmXNormalized = palmBase[0] / videoSketch.width;
 
+
+    //for arduino code output on hand recognition
     if (serial.isOpen()) {
-      const outputData = nf(palmXNormalized, 1, 4);
-      const timeSinceLastTransmitMs =
-        videoSketch.millis() - timestampLastTransmit;
-      if (timeSinceLastTransmitMs > MIN_TIME_BETWEEN_TRANSMISSIONS_MS) {
-        serial.writeLine(outputData);
-        timestampLastTransmit = videoSketch.millis();
-      } else {
-        console.log(
-          "Did not send  '" +
-            outputData +
-            "' because time since last transmit was " +
-            timeSinceLastTransmitMs +
-            "ms"
-        );
-      }
+      // const outputData = nf(palmXNormalized, 1, 4);
+      // const timeSinceLastTransmitMs =
+      //   videoSketch.millis() - timestampLastTransmit;
+      // if (timeSinceLastTransmitMs > MIN_TIME_BETWEEN_TRANSMISSIONS_MS) {
+      //   serial.writeLine(outputData);
+      //   timestampLastTransmit = videoSketch.millis();
+      // } else {
+      //   console.log(
+      //     "Did not send  '" +
+      //       outputData +
+      //       "' because time since last transmit was " +
+      //       timeSinceLastTransmitMs +
+      //       "ms"
+      //   );
+      // }
     }
   } else {
     curHandPose = null;
   }
 }
 
-const setupHandPose = (video, videoSketch) => {
+// const GE = new fp.GestureEstimator([
+//   fp.Gestures.VictoryGesture,
+//   fp.Gestures.ThumbsUpGesture
+// ]);
+
+const setupHandPose = async (video, videoSketch) => {
   //Get handpose model from ml5 library
   handPoseModel = ml5.handpose(video, onHandPoseModelReady);
   // Call onNewHandPosePrediction every time a new handPose is predicted
   handPoseModel.on("predict", onNewHandPosePrediction);
+  // const model = await handpose.load();
+  // const predictions = await model.estimateHands(video, true);
+  // const estimatedGestures = GE.estimate(predictions.landmarks, 8.5);
+  // console.log("gestures", estimatedGestures);
 };
 
 const setupWebSerial = () => {
@@ -441,12 +455,30 @@ const moveParticles = (sketch) => {
   }
 };
 
+function preload() {
+  navigator.mediaDevices.enumerateDevices().then(getDevices);
+}
+
+function getDevices(devices) {
+  for (let i = 0; i < devices.length; ++i) {
+    let deviceInfo = devices[i];
+    if (deviceInfo.kind == "videoinput") {
+      console.log("Device name :", devices[i].label);
+      console.log("DeviceID :", devices[i].deviceId);
+      if (devices[i].deviceId === "c4d0106361ecb67487d2f9cb7f4a62fda3661f1abae710e57a6bf5709442ce74") {
+        console.log("CHOSEN", devices[i].label);
+        videoSource = devices[i].deviceId;
+      }
+    }
+  }
+}
+
 let particlesSketch = new p5((sketch) => {
   sketch.setup = () => {
     sketch.createCanvas(...settings.particlesCanvasSize);
 
     //set framerate for visualization
-    sketch.frameRate(30);
+    sketch.frameRate(60);
 
     //set values for sliders
     sliders = {
@@ -467,7 +499,17 @@ let particlesSketch = new p5((sketch) => {
   };
 }, "left");
 
+
+var videoSourceConstraints = {
+  video: {
+  deviceId: {
+    exact: videoSource
+    },
+  }
+};
+
 let videoSketch = new p5((videoSketch) => {
+  preload();
   videoSketch.setup = () => {
     videoSketch.createCanvas(...settings.videoCanvasSize);
     //setup web serial for arduino connection
@@ -477,8 +519,9 @@ let videoSketch = new p5((videoSketch) => {
     pHtmlMsg = videoSketch.createP(
       "Click anywhere on this page to open the serial connection dialog"
     );
+
     //video setup
-    video = videoSketch.createCapture(videoSketch.VIDEO);
+    video = videoSketch.createCapture(videoSourceConstraints);
     // Hide the video element, and just show the canvas
     video.hide();
 
@@ -487,9 +530,6 @@ let videoSketch = new p5((videoSketch) => {
   };
 
   videoSketch.draw = () => {
-    // videoSketch.background(0);
-    // videoSketch.fill(255);
-    // videoSketch.rect(400, 500, 50, 50);
     videoSketch.image(video, 0, 0, videoSketch.width, videoSketch.height);
 
     if (!isHandPoseModelInitialized) {
@@ -572,7 +612,16 @@ function onSerialDataReceived(eventSender, newData) {
 /**
  * Called automatically by the browser through p5.js when mouse clicked
  */
-function mouseClicked() {
+// function mouseClicked() {
+//   if (!serial.isOpen()) {
+//     serial.connectAndOpen(null, serialOptions);
+//   }
+// }
+
+/**
+ * Called by open serial settings button from command palette
+ */
+function openSerial() {
   if (!serial.isOpen()) {
     serial.connectAndOpen(null, serialOptions);
   }
