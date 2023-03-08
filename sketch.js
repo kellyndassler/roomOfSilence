@@ -37,9 +37,15 @@ const MIN_TIME_BETWEEN_TRANSMISSIONS_MS = 50; // 50 ms is ~20 Hz
 //particles visualization variables
 let particles, sliders, m, n, v, N;
 let equity, surveil, uniColor;
+
+//arduino input
 let tempQueue = [];
 let rotaryVals = [];
-let lastVal;
+let buttonStatus = [];
+let freezeScreenVal = false;
+
+let particlesCanvas;
+let screenshotCounter = 0;
 
 let climate = 5;
 
@@ -432,17 +438,17 @@ const wipeScreen = (sketch) => {
 
 //get slider value and change corresponding parameters
 const updateParams = (sketch) => {
-  // equity = sliders.equity.value(); // 1 - 10
-  equity = 5;
-  //equity arduino code
-  while(rotaryVals.length > 0){
-    // Grab the least recent value of queue (first in first out)
-    // JavaScript is not multithreaded, so we need not lock the queue
-    // before reading/modifying.
-    let val = rotaryVals.shift();
-    console.log("value", val);
-    equity = val;
-  }
+  equity = sliders.equity.value(); // 1 - 10
+  // equity = 5;
+  // //equity arduino code
+  // while(rotaryVals.length > 0){
+  //   // Grab the least recent value of queue (first in first out)
+  //   // JavaScript is not multithreaded, so we need not lock the queue
+  //   // before reading/modifying.
+  //   let rotaryVal = rotaryVals.shift();
+  //   console.log("value", rotaryVal);
+  //   equity = rotaryVal;
+  // }
   climate = sliders.climate.value(); // arduino temp sensor input 1- 10
   // climate = onSerialDataReceived(parseFloat())
   //climate temp code
@@ -451,9 +457,9 @@ const updateParams = (sketch) => {
   //   // Grab the least recent value of queue (first in first out)
   //   // JavaScript is not multithreaded, so we need not lock the queue
   //   // before reading/modifying.
-  //   let val = tempQueue.shift();
-  //   console.log("value", val);
-  //   climate = val;
+  //   let tempVal = tempQueue.shift();
+  //   console.log("value", tempVal);
+  //   climate = tempVal;
   // }
   surveil = sliders.surveil.value(); // 1 - 10
   m = sketch.map(equity, 1, 10, 1, 40); //freq value
@@ -501,9 +507,25 @@ function getDevices(devices) {
   }
 }
 
+const freezeScreen = (sketch, canvas) => {
+  while(buttonStatus.length > 0){
+    // Grab the least recent value of queue (first in first out)
+    // JavaScript is not multithreaded, so we need not lock the queue
+    // before reading/modifying.
+    let buttonStatusVal = buttonStatus.shift();
+    freezeScreenVal = buttonStatusVal;
+    
+    if(freezeScreenVal) {
+      // console.log("value", freezeScreenVal);
+      sketch.saveCanvas(canvas, 'sketchPhoto'+screenshotCounter, 'jpg');
+      screenshotCounter++;
+    }
+  }
+}
+
 let particlesSketch = new p5((sketch) => {
   sketch.setup = () => {
-    sketch.createCanvas(...settings.particlesCanvasSize);
+    particlesCanvas = sketch.createCanvas(...settings.particlesCanvasSize);
 
     //set framerate for visualization
     sketch.frameRate(60);
@@ -524,6 +546,7 @@ let particlesSketch = new p5((sketch) => {
     wipeScreen(sketch);
     updateParams(sketch);
     moveParticles(sketch);
+    freezeScreen(sketch, particlesCanvas);
   };
 }, "left");
 
@@ -640,7 +663,10 @@ function onSerialDataReceived(eventSender, newData) {
   // tempQueue.push(parseFloat(newData));
 
   //equity rotary arduino code
-  rotaryVals.push(parseFloat(newData));
+  // rotaryVals.push(parseFloat(newData));
+
+  //button arduino code
+  buttonStatus.push(parseFloat(newData));
 }
 
 /**
