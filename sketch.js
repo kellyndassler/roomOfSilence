@@ -439,16 +439,16 @@ const wipeScreen = (sketch) => {
 //get slider value and change corresponding parameters
 const updateParams = (sketch) => {
   equity = sliders.equity.value(); // 1 - 10
-  // equity = 5;
+  equity = 5;
   // //equity arduino code
-  // while(rotaryVals.length > 0){
-  //   // Grab the least recent value of queue (first in first out)
-  //   // JavaScript is not multithreaded, so we need not lock the queue
-  //   // before reading/modifying.
-  //   let rotaryVal = rotaryVals.shift();
-  //   console.log("value", rotaryVal);
-  //   equity = rotaryVal;
-  // }
+  while(rotaryVals.length > 0){
+    // Grab the least recent value of queue (first in first out)
+    // JavaScript is not multithreaded, so we need not lock the queue
+    // before reading/modifying.
+    let rotaryVal = rotaryVals.shift();
+    console.log("value", rotaryVal);
+    equity = rotaryVal;
+  }
   climate = sliders.climate.value(); // arduino temp sensor input 1- 10
   // climate = onSerialDataReceived(parseFloat())
   //climate temp code
@@ -659,14 +659,24 @@ function onSerialDataReceived(eventSender, newData) {
   console.log("onSerialDataReceived", newData);
   pHtmlMsg.html("onSerialDataReceived: " + newData);
 
+  let nextArduinoInput = newData;
+  let incomingFloatValue;
+  // let incomingFloatValue = parseFloat(nextArduinoInput);
+  // console.log("incoming", incomingFloatValue);
   //temperature code
   // tempQueue.push(parseFloat(newData));
-
   //equity rotary arduino code
-  // rotaryVals.push(parseFloat(newData));
-
+  if(nextArduinoInput.includes("dial")) {
+    incomingFloatValue = nextArduinoInput.match(/(\d+)/)[0];
+    rotaryVals.push(incomingFloatValue);
+    // console.log("hit dial", incomingFloatValue);
+  }
   //button arduino code
-  buttonStatus.push(parseFloat(newData));
+  if(nextArduinoInput.includes("button")) {
+    incomingFloatValue = nextArduinoInput.match(/(\d+)/)[0];
+    buttonStatus.push(incomingFloatValue);
+    // console.log("hit button ", incomingFloatValue);
+  }
 }
 
 /**
