@@ -47,7 +47,59 @@ let freezeScreenVal = false;
 let particlesCanvas;
 let screenshotCounter = 0;
 
+//initialize climate value (colors start weird if you don't feed an initial value)
 let climate = 5;
+
+//global blurb toggle
+let finalOutput = false;
+let finalOutputAge = 30;
+
+//store data for future blurbs
+let equityBlurb = [
+  {title: "Parasitic", bolded: "", paragraph:""},
+  {title: "Egalitarian", bolded: "", paragraph:""},
+  {title: "Redistributive", bolded: "", paragraph:""},
+  {title: "Democratic", bolded: "", paragraph:""},
+  {title: "Progressive", bolded: "", paragraph:""},
+  {title: "Competitive", bolded: "", paragraph:""},
+  {title: "Individualistic", bolded: "", paragraph:""},
+  {title: "Authoritarian", bolded: "", paragraph:""},
+  {title: "Aristocratic", bolded: "", paragraph:""},
+  {title: "Dominant", bolded: "", paragraph:""},
+];
+
+let climateBlurb = [
+  {title: "Zealous", bolded: "", paragraph:""},
+  {title: "Vigilant", bolded: "", paragraph:""},
+  {title: "Responsive", bolded: "", paragraph:""},
+  {title: "Informed", bolded: "", paragraph:""},
+  {title: "Ignorant", bolded: "", paragraph:""},
+  {title: "Careful", bolded: "", paragraph:""},
+  {title: "Skeptical", bolded: "", paragraph:""},
+  {title: "Alarmist", bolded: "", paragraph:""},
+  {title: "Dogmatic", bolded: "", paragraph:""},
+  {title: "Paralyzed", bolded: "", paragraph:""},
+];
+
+let surveilBlurb = [
+  {title: "Symbiosis", bolded: "Artificial intelligence is revered as the ultimate tool for self-improvement. ", paragraph: "Collectively, we have embraced cybernetic enhancements and broken the barrier of brain-computer interfaces to enhance our own abilities. What was once viewed as transgressive biohacking and amoral experimentation is replaced with a fervor to transcend biological limitations. Every individual is driven to deeply explore their own passions and goals through the aid of technology."},
+  {title: "Partnership", bolded: "", paragraph:""},
+  {title: "Advisors", bolded: "", paragraph:""},
+  {title: "Tools", bolded: "", paragraph:""},
+  {title: "Disruption", bolded: "", paragraph:""},
+  {title: "Threat", bolded: "", paragraph:""},
+  {title: "Replacement", bolded: "", paragraph:""},
+  {title: "Adversary", bolded: "", paragraph:""},
+  {title: "Conqueror", bolded: "", paragraph:""},
+  {title: "Panopticon", bolded: "", paragraph:""},
+];
+
+//function to set new Blurbs
+function Blurb(title, bolded, paragraph) {
+  this.title = title;
+  this.bolded = bolded;
+  this.paragraph = paragraph;
+}
 
 //throttles color range so it stays between red and purple
 let maxColor = 260;
@@ -66,7 +118,7 @@ let minWalk = 0.002;
 const settings = {
   nParticles: 10000,
   particlesCanvasSize: [640, 500],
-  videoCanvasSize: [640, 500],
+  // videoCanvasSize: [640, 500],
 };
 
 let devicesList;
@@ -473,6 +525,69 @@ const updateParams = (sketch) => {
   // uniColor = sketch.map(climate, 440, 380, 0, 260);  //currentHue
 };
 
+function setFuture(){
+
+  //create arrays to iterate through for each element
+  const h1 = document.querySelectorAll(".futureH");
+  const p = document.querySelectorAll(".futureP");
+  const valueArray = [equity, climate, surveil];
+  const blurbArray = [equityBlurb, climateBlurb, surveilBlurb];
+  let valueSelector = null;
+
+  for (var i = h1.length - 1; i >= 0; i--) {
+      //grab correct text blurb object
+      if (valueArray[i] <= 1.5) {
+        valueSelector = 0
+      } else if (valueArray[i] <= 2.5) {
+        valueSelector = 1
+      } else if (valueArray[i] <= 3.5) {
+        valueSelector = 2
+      } else if (valueArray[i] <= 4.5) {
+        valueSelector = 3
+      } else if (valueArray[i] <= 5.5) {
+        valueSelector = 4
+      } else if (valueArray[i] <= 6.5) {
+        valueSelector = 5
+      } else if (valueArray[i] <= 7.5) {
+        valueSelector = 6
+      } else if (valueArray[i] <= 8.5) {
+        valueSelector = 7
+      } else if (valueArray[i] <= 9.5) {
+        valueSelector = 8
+      } else if (valueArray[i] <= 10) {
+        valueSelector = 9
+      };
+
+      const futureText = new Blurb(blurbArray[i][valueSelector].title, blurbArray[i][valueSelector].bolded, blurbArray[i][valueSelector].paragraph);
+
+      console.log(h1[i]);
+
+      h1[i].innerHTML = futureText.title;
+      p[i].innerHTML = futureText.paragraph;
+      p[i].prepend("<span>" + futureText.bolded + "</span> ");
+
+      console.log(h1[i]);
+  }
+
+  finalOutput = true;
+
+}
+
+function showFuture() {
+  const doc = document.querySelector("#future-container");
+
+  if (finalOutputAge <= 0) {
+    //reset final output values
+    doc.style.display = "none";
+    finalOutput = false;
+    finalOutputAge = 30;
+  } else {
+    doc.style.display = "flex";
+    finalOutputAge -= .5;
+  }
+
+}
+
 const moveParticles = (sketch) => {
   let movingParticles = particles.slice(0, N);
 
@@ -546,6 +661,9 @@ let particlesSketch = new p5((sketch) => {
     wipeScreen(sketch);
     updateParams(sketch);
     moveParticles(sketch);
+    if (finalOutput) {
+      showFuture();
+    }
     freezeScreen(sketch, particlesCanvas);
   };
 }, "left");

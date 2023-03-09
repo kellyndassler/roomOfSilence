@@ -1,3 +1,18 @@
+@font-face {
+  font-family: spaceReg;
+  src: url(/fonts/SpaceGrotesk-Regular.ttf);
+}
+
+@font-face {
+  font-family: spaceBold;
+  src: url(/fonts/SpaceGrotesk-Bold.ttf);
+}
+
+@font-face {
+  font-family: SyneBold;
+  src: url(/fonts/Syne-Bold.ttf);
+}
+
 html, body {
 	height: 100%;
 	width: 100%;
@@ -5,7 +20,7 @@ html, body {
     padding: 0;
 	color: white;
 	background: #191919;
-	font-family: monospace;
+	font-family: spaceReg;
 	font-size: 14px;
 }
 a {
@@ -16,7 +31,7 @@ header {
 	position: fixed;
 	top: 0;
 	left: 0;
-	background-color: rgba(0,0,0,0.4);
+/*	background-color: rgba(0,0,0,0.4);*/
 	border-radius: 5px;
 	margin: 10px;
 	padding: 10px;
@@ -59,4 +74,32 @@ footer:hover {
 }
 #right {
     display: inline-block;
+}
+/*New CSS for future output*/
+#future-container {
+	position: fixed;
+	top: 5%;
+	right: 5%;
+	z-index: 10;
+	height: 90%;
+	width: 90%;
+	background: red url('../img/futureBG.png') no-repeat 0 0;
+	display: none;
+}
+.col {
+	width: 400px;
+	height: 350px;
+	margin-left: 50px;
+	margin-top: 300px;
+	background: blue;
+}
+.col h1 {
+	text-transform: uppercase;
+	font-size: 24pt;
+}
+.col p {
+	margin-top: 100px;
+}
+span {
+	font-weight: bold;
 }
