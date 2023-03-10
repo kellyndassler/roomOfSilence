@@ -117,7 +117,7 @@ let minWalk = 0.002;
 
 const settings = {
   nParticles: 10000,
-  particlesCanvasSize: [640, 500],
+  particlesCanvasSize: [1440, 960],
   // videoCanvasSize: [640, 500],
 };
 
@@ -417,8 +417,14 @@ class Particle {
     sketch.strokeWeight(particleStroke);
     sketch.stroke(...this.color);
 
-    if (surveil > 8.5) {
+    if (surveil > 8.5 || surveil < 2.5) {
       //create quadrant symmetry — as lines
+      sketch.point(this.xOff, this.yOff);
+      sketch.point(sketch.width - this.xOff, this.yOff);
+      sketch.point(this.xOff, sketch.height - this.yOff);
+      sketch.point(sketch.width - this.xOff, sketch.height - this.yOff);
+
+      sketch.strokeWeight(particleStroke/2);
 
       sketch.line(this.xOff, this.yOff, this.xPrevOff, this.yPrevOff);
       sketch.line(
@@ -484,7 +490,7 @@ function drawBoundingBox(handPose, videoSketch) {
 //redraw screen background
 const wipeScreen = (sketch) => {
   //alpha value preserves some particle history, creates slower rate of change when variables adjusted
-  sketch.background(10, 10);
+  sketch.background(10, 5);
   sketch.stroke(255);
 };
 
@@ -514,8 +520,8 @@ const updateParams = (sketch) => {
   //   climate = tempVal;
   // }
   surveil = sliders.surveil.value(); // 1 - 10
-  m = sketch.map(equity, 1, 10, 1, 40); //freq value
-  n = sketch.map(surveil, 1, 10, 1, 40); //freq value
+  m = sketch.map(equity, 1, 10, 1, 10); //freq value
+  n = sketch.map(surveil, 1, 10, 1, 10); //freq value
   //climate temp code
   v = sketch.map(climate, 1, 10, 0.05, 0.001);
   // v = sketch.map(climate, 440, 380, 0.05, 0.001); //vibrations of particles
@@ -643,7 +649,7 @@ let particlesSketch = new p5((sketch) => {
     particlesCanvas = sketch.createCanvas(...settings.particlesCanvasSize);
 
     //set framerate for visualization
-    sketch.frameRate(60);
+    sketch.frameRate(10);
 
     //set values for sliders
     sliders = {
