@@ -1,16 +1,16 @@
 @font-face {
   font-family: spaceReg;
-  src: url(/fonts/SpaceGrotesk-Regular.ttf);
+  src: url(fonts/SpaceGrotesk-Regular.ttf);
 }
 
 @font-face {
   font-family: spaceBold;
-  src: url(/fonts/SpaceGrotesk-Bold.ttf);
+  src: url(fonts/SpaceGrotesk-Bold.ttf);
 }
 
 @font-face {
   font-family: SyneBold;
-  src: url(/fonts/Syne-Bold.ttf);
+  src: url(fonts/Syne-Bold.ttf);
 }
 
 html, body {
@@ -83,15 +83,15 @@ footer:hover {
 	z-index: 10;
 	height: 90%;
 	width: 90%;
-	background: red url('../img/futureBG.png') no-repeat 0 0;
+	background: url('img/futureBG.png') no-repeat 0 0;
+	background-size: cover;
 	display: none;
 }
 .col {
 	width: 400px;
 	height: 350px;
-	margin-left: 50px;
+	margin-left: 80px;
 	margin-top: 300px;
-	background: blue;
 }
 .col h1 {
 	text-transform: uppercase;
