@@ -176,6 +176,7 @@ function hasGetUserMedia() {
   return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
 }
 
+let sketchVal;
 // If webcam supported, add event listener to button for when user
 // wants to activate it.
 if (hasGetUserMedia()) {
@@ -187,6 +188,7 @@ if (hasGetUserMedia()) {
 
 // Enable the live webcam view and start detection.
 function enableCam(event) {
+  console.log("sketch");
   if (!gestureRecognizer) {
     alert("Please wait for gestureRecognizer to load")
     return
@@ -213,7 +215,7 @@ function enableCam(event) {
   };
 
   // Activate the webcam stream.
-  navigator.mediaDevices.getUserMedia(videoSourceConstraints).then(function(stream) {
+  navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
     videoGesture.srcObject = stream;
     videoGesture.addEventListener("loadeddata", predictWebcam);
   })
@@ -249,17 +251,17 @@ async function predictWebcam() {
   let gestureName = "";
   if (results.gestures.length > 0) {
     //if hand recognized, flash lights green or blue
-    if(serial.isOpen()){
-      const outputData =  1;
-      const timeSinceLastTransmitMs = millis() - timestampLastTransmit;
-      if(timeSinceLastTransmitMs > MIN_TIME_BETWEEN_TRANSMISSIONS_MS){
-        serial.writeLine(outputData); 
-        timestampLastTransmit = millis();
-      }else{
-        console.log("Did not send  '" + outputData + "' because time since last transmit was " 
-                    + timeSinceLastTransmitMs + "ms");
-      }
-    }
+    // if(serial.isOpen()){
+    //   const outputData =  1;
+    //   const timeSinceLastTransmitMs = millis() - timestampLastTransmit;
+    //   if(timeSinceLastTransmitMs > MIN_TIME_BETWEEN_TRANSMISSIONS_MS){
+    //     serial.writeLine(outputData); 
+    //     timestampLastTransmit = millis();
+    //   }else{
+    //     console.log("Did not send  '" + outputData + "' because time since last transmit was " 
+    //                 + timeSinceLastTransmitMs + "ms");
+    //   }
+    // }
     gestureOutput.style.display = "block";
     gestureOutput.style.width = videoWidth;
     gestureName = results.gestures[0][0].categoryName;
@@ -807,7 +809,7 @@ function getDevices(devices) {
       console.log("DeviceID :", devices[i].deviceId);
       if (
         devices[i].deviceId ===
-        "c4d0106361ecb67487d2f9cb7f4a62fda3661f1abae710e57a6bf5709442ce74"
+        "10a3f7eb1631ca4259cd0946e8a1b6200d418cf921fac7055bbde69637c05af3"
       ) {
         console.log("CHOSEN", devices[i].label);
         videoSource = devices[i].deviceId;
@@ -837,6 +839,7 @@ const freezeScreen = (canvas) => {
 
 let particlesSketch = new p5((sketch) => {
   preload();
+  // sketchVal = sketch;
   sketch.setup = () =>  {
     particlesCanvas = sketch.createCanvas(...settings.particlesCanvasSize);
     // particlesCanvas.parent('sketch-container');
