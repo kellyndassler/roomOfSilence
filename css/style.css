@@ -198,7 +198,8 @@ section {
 	width: 400px;
 	height: 350px;
 	margin-left: 100px;
-	margin-top: 700px;
+	margin-top: 600px;
+  color: white;
 }
 .col h1 {
 	text-transform: uppercase;

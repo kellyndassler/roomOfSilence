@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.5.0/p5.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/makeabilitylab/p5js/_libraries/serial.js"></script>
+    <script language="javascript" type="text/javascript" src="https://cdn.jsdelivr.net/npm/p5.serialserver@0.0.28/lib/p5.serialport.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/gh/makeabilitylab/p5js/_libraries/serial.js"></script> -->
     <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js"
     crossorigin="anonymous"></script>
@@ -13,8 +14,8 @@
   <body>
     <script type="module" src="sketch.js"></script>
     <!-- <script src="serialComm.js"></script> -->
-    <header>
-      <h1>Settings</h1>
+    <!-- <header>
+      <h1>Settings</h1> -->
       <!-- <form id="settings">
         <label for="equitySlider">Distribution - Accumulation:</label>
         <input
@@ -64,10 +65,10 @@
         <span class="mdc-button__ripple"></span>
         <span class="mdc-button__label">ENABLE WEBCAM</span>
       </button>
-      <button onclick="openSerial()">Open Serial</button>
-      <button onclick="setFuture()">Set Futures</button>
-      <button onmousedown="blackout()" onmouseup="endBlackout()">Blackout</button>
-    </header>
+      <!-- <button onclick="openSerial()">Open Serial</button> -->
+      <!-- <button onclick="setFuture()">Set Futures</button> -->
+      <!-- <button onmousedown="blackout()" onmouseup="endBlackout()">Blackout</button> -->
+    <!-- </header> -->
     <div id="scrim"></div>
     <div id="future-container">
       <div class="col">
@@ -112,12 +113,12 @@
         <img src="https://assets.codepen.io/9177687/thumbs-up-ga409ddbd6_1.png" crossorigin="anonymous" title="Click to get recognize!" />
         <p class="classification removed">
       </div> -->
-    <div id="liveView" class="videoView">
-      <div style="position: relative;">
+    <!-- <div id="liveView" class="videoView">
+      <div style="position: relative;"> -->
         <video id="webcam" autoplay></video>
         <!-- <canvas class="output_canvas" id="output_canvas" width="1280" height="720" style="position: absolute; left: 0px; top: 0px;"></canvas> -->
         <p id='gesture_output' class="output">
-      </div>
-    </div>
+      <!-- </div>
+    </div> -->
   </body>
 </html>
