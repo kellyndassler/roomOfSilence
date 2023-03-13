@@ -54,7 +54,59 @@ let freezeScreenVal = false;
 let particlesCanvas;
 let screenshotCounter = 0;
 
+//initialize climate value (colors start weird if you don't feed an initial value)
 let climate = 5;
+
+//global blurb toggle
+let finalOutput = false;
+let finalOutputAge = 60;
+
+//store data for future blurbs
+let equityBlurb = [
+  {title: "Objective", bolded: "Resources are distributed so evenly that everyone has the same access to the same opportunities. Accumulation and greed are widely decried, as our world embraces asceticism."},
+  {title: "Egalitarian", bolded: "People are valued for their contributions to society as the concept of wealth as been eliminated altogether, and social mobility is achievable for all."},
+  {title: "Collectivist", bolded: "There is a strong sense of social cohesion and belonging. People recognize that their well-being is interconnected with that of others and the planet as a whole."},
+  {title: "Inclusive", bolded: "People from diverse backgrounds contribute to community decision-making, while centralized governments distribute resources to local enclaves to use as they see fit."},
+  {title: "Progressive", bolded: "Excess resources are channeled towards those with the greatest need, but attempts to reduce inequality spur continuous debate over the concept of need."},
+  {title: "Auspicious", bolded: "It was decided that nothing is more fair than the whims of luck, as we embraced the uncertainty and unpredictability of the future."},
+  {title: "Competitive", bolded: "Rewards only last for so long as continuous competition and evaluation create isolation and stress for those on top, and endless struggle for those left behind."},
+  {title: "Nepotism", bolded: "The well connected are made into powerful and charismatic leaders; more adept at cultivating alliances and rapport than systems and structure."},
+  {title: "Aristocratic", bolded: "The masses live vicariously through the eyes and dalliances of elite families as each dominates the cultural and economic framework of society."},
+  {title: "Dominant", bolded: "The gap between the rich and the poor has grown into an uncrossable chasm, leaving our bodies and minds broken under the shackles of exploitation."},
+];
+
+let climateBlurb = [
+  {title: "Zealous", bolded: "What began as ecoterrorism against polluters has broken out into all out war. Some believe we will only succeed in destroying ourselves along with our planet." },
+  {title: "Vigilant", bolded: "Rapidly changing investments to react to each looming threat creates continuous destabilization and boom/bust cycles across industries." },
+  {title: "Responsive", bolded: "Swathes of land were given back to nature, driving populations across the world into densely packed cities, surrounded by protected green spaces." },
+  {title: "Informed", bolded: "As disasters swept the globe, the pleas of those who lost their lands, cultures and families to tides and fire informed our steps towards adaptation and recovery." },
+  {title: "Ignorant", bolded: "It was too hard to give up the riches of modernity, as we marched forward with ears ignorant to the cries of the desperate." },
+  {title: "Careful", bolded: "For an economy that is quick to change, we found ourselves slow to adapt. It’s a struggle to find balance in a world that demands deprivation from the  already deprived." },
+  {title: "Skeptical", bolded: "We have a renewed certainty in our direction; encouraging rigorous debate and valuing temperance, caution, and restraint in our actions to mitigate climate change." },
+  {title: "Alarmist", bolded: "Our fear drove us to reflect away the sun and choke the oceans with carbon sinks in a desperate attempt to mitigate the worst of our problems." },
+  {title: "Dogmatic", bolded: "The new generations don’t know another way, we have trained our culture on the dogma of green and growth, and it will never change again." },
+  {title: "Paralyzed", bolded: "We barreled onwards into destruction not because of an unwillingness to change but because we didn’t know what to change into." },
+];
+
+let surveilBlurb = [
+  {title: "Symbiosis", bolded: "What was once viewed as transgressive biohacking and amoral experimentation is replaced with a fervor to transcend biological limitations." },
+  {title: "Partnership", bolded:"We have been enabled to tap into the collective intelligence of the entire race at a whim through unique algorithms bonded to us at birth." },
+  {title: "Advisors", bolded: "Introducing AI tools into policy decisions led to debate on how to draw the lines of influence between us and algorithms; and ensure compassion and empathy." },
+  {title: "Tools", bolded: "Post AI-emergence, lawmakers rushed to limit the scope of usage and regulate the application of automated toolsets in the workplace."},
+  {title: "Disruption", bolded: "AI has become a strong competitor to human labor, leading to widespread job displacement and the disruption of prevailing economic models."},
+  {title: "Threat", bolded: "Concern over the dangers of AI tools in the hands of state enemies lead to forceful elimination of all data collection and training efforts."},
+  {title: "Replacement", bolded: "A generation of humans under constant surveillance in the workplace trained their own replacements as they scrambled for a niche in which humans excel."},
+  {title: "Adversary", bolded: "Pro and anti-automation factions clash openly and highly mechanized countries experience internal attacks from stateless Luddite sects." },
+  {title: "Conqueror", bolded: "AI has developed a world completely devoid of human influence. Decisions are made with machine precision, containing no regard for the emotional tendencies of human beings." },
+  {title: "Panopticon", bolded: "Through machine rule we no longer need to compete for anything. They have created an unheard of era of stability for human civilization as we march blindly into the future." }
+];
+
+//function to set new Blurbs
+function Blurb(title, bolded, paragraph) {
+  this.title = title;
+  this.bolded = bolded;
+  this.paragraph = paragraph;
+}
 
 //throttles color range so it stays between red and purple
 let maxColor = 260;
@@ -71,8 +123,8 @@ let A = 0.02;
 let minWalk = 0.002;
 
 const settings = {
-  nParticles: 10000,
-  particlesCanvasSize: [1000, 900],
+  nParticles: 2000,
+  particlesCanvasSize: [1920, 1080],
   // videoCanvasSize: [640, 500],
 };
 
@@ -514,8 +566,14 @@ class Particle {
     sketch.strokeWeight(particleStroke);
     sketch.stroke(...this.color);
 
-    if (surveil > 8.5) {
+    if (surveil > 8.5 || surveil < 2.5) {
       //create quadrant symmetry — as lines
+      sketch.point(this.xOff, this.yOff);
+      sketch.point(sketch.width - this.xOff, this.yOff);
+      sketch.point(this.xOff, sketch.height - this.yOff);
+      sketch.point(sketch.width - this.xOff, sketch.height - this.yOff);
+
+      sketch.strokeWeight(particleStroke/2);
 
       sketch.line(this.xOff, this.yOff, this.xPrevOff, this.yPrevOff);
       sketch.line(
@@ -581,7 +639,7 @@ class Particle {
 //redraw screen background
 const wipeScreen = (sketch) => {
   //alpha value preserves some particle history, creates slower rate of change when variables adjusted
-  sketch.background(10, 10);
+  sketch.background(10, 5);
   sketch.stroke(255);
 };
 
@@ -651,6 +709,69 @@ const updateParams = (sketch) => {
   N = 5000; //num particles
   climate = sketch.map(climate, 115, 85, 1, 10); //map 1-10 for ben's code
 };
+
+function setFuture(){
+
+  //create arrays to iterate through for each element
+  const h1 = document.querySelectorAll(".futureH");
+  const p = document.querySelectorAll(".futureP");
+  const valueArray = [equity, climate, surveil];
+  const blurbArray = [equityBlurb, climateBlurb, surveilBlurb];
+  let valueSelector = null;
+
+  for (var i = h1.length - 1; i >= 0; i--) {
+      //grab correct text blurb object
+      if (valueArray[i] <= 1.5) {
+        valueSelector = 0
+      } else if (valueArray[i] <= 2.5) {
+        valueSelector = 1
+      } else if (valueArray[i] <= 3.5) {
+        valueSelector = 2
+      } else if (valueArray[i] <= 4.5) {
+        valueSelector = 3
+      } else if (valueArray[i] <= 5.5) {
+        valueSelector = 4
+      } else if (valueArray[i] <= 6.5) {
+        valueSelector = 5
+      } else if (valueArray[i] <= 7.5) {
+        valueSelector = 6
+      } else if (valueArray[i] <= 8.5) {
+        valueSelector = 7
+      } else if (valueArray[i] <= 9.5) {
+        valueSelector = 8
+      } else if (valueArray[i] <= 10) {
+        valueSelector = 9
+      };
+
+      const futureText = new Blurb(blurbArray[i][valueSelector].title, blurbArray[i][valueSelector].bolded, blurbArray[i][valueSelector].paragraph);
+      const span = document.createElement("span");
+      span.innerHTML = futureText.bolded + " ";
+      console.log(h1[i]);
+
+      h1[i].innerHTML = futureText.title;
+      p[i].innerHTML = "";
+      p[i].appendChild(span);
+      // p[i].append(futureText.paragraph);
+  }
+
+  finalOutput = true;
+
+}
+
+function showFuture() {
+  const doc = document.querySelector("#future-container");
+
+  if (finalOutputAge <= 0) {
+    //reset final output values
+    doc.style.display = "none";
+    finalOutput = false;
+    finalOutputAge = 30;
+  } else {
+    doc.style.display = "flex";
+    finalOutputAge -= .5;
+  }
+
+}
 
 const moveParticles = (sketch) => {
   let movingParticles = particles.slice(0, N);
@@ -739,9 +860,19 @@ let particlesSketch = new p5((sketch) => {
   };
 
   sketch.draw = () => {
-    wipeScreen(sketch);
-    updateParams(sketch);
-    moveParticles(sketch);
+    if (finalOutput == false) {
+      wipeScreen(sketch);
+      updateParams(sketch);
+      moveParticles(sketch);
+    };
+    if (finalOutput) {
+      showFuture();
+
+    }
+    freezeScreen(sketch, particlesCanvas);
+   // wipeScreen(sketch);
+  //  updateParams(sketch);
+  //  moveParticles(sketch);
     // freezeScreen(sketch,particlesCanvas);
   };
  }, "left");
@@ -891,4 +1022,11 @@ function openSerial() {
   if (!serialTwo.isOpen()) {
     serialTwo.connectAndOpen(null, serialOptions);
   }
+}
+
+function blackout() {
+  document.getElementById("scrim").style.visibility='visible';
+}
+function endBlackout() {
+  document.getElementById("scrim").style.visibility='hidden';
 }
