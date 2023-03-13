@@ -51,15 +51,17 @@
           name="numSlider"
           type="range"
           id="numSlider"
-          min="1000"
-          max="20000"
-          step="1000"
-          value="10000"
+          min="500"
+          max="5000"
+          step="500"
+          value="2000"
         />
       </form>
       <button onclick="openSerial()">Open Serial</button>
       <button onclick="setFuture()">Set Futures</button>
+      <button onmousedown="blackout()" onmouseup="endBlackout()">Blackout</button>
     </header>
+    <div id="scrim"></div>
     <div id="future-container">
       <div class="col">
         <h1 class="futureH">
