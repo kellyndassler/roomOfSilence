@@ -156,3 +156,44 @@ section {
   width: 100%;
   font-size: calc(8px + 1.2vw);
 }
+
+/*New CSS for future output*/
+#future-container {
+	position: fixed;
+	top: 5%;
+	right: 5%;
+	z-index: 10;
+	height: 90%;
+	width: 90%;
+	background: url('img/futureBG.png') no-repeat 0 0;
+	background-size: contain;
+	display: none;
+}
+#scrim {
+	position: fixed;
+	z-index: 20;
+	height: 100%;
+	width: 100%;
+	background-color: black;
+	visibility: hidden;
+	pointer-events: none;
+}
+.col {
+	width: 400px;
+	height: 350px;
+	margin-left: 100px;
+	margin-top: 700px;
+}
+.col h1 {
+	text-transform: uppercase;
+	font-size: 24pt;
+}
+.col p {
+	margin-top: 20px;
+	font-size: 13pt;
+	color: #c4c4c4;
+}
+span {
+	font-family: spaceReg;
+	color: white;
+}
