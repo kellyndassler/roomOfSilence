@@ -52,20 +52,21 @@ let climate = 5;
 
 //global blurb toggle
 let finalOutput = false;
-let finalOutputAge = 60;
+let finalOutputAge = 700;
+let finalOutputCounter = finalOutputAge;
 
 //store data for future blurbs
 let equityBlurb = [
   {title: "Objective", bolded: "Resources are distributed so evenly that everyone has the same access to the same opportunities. Accumulation and greed are widely decried, as our world embraces asceticism."},
   {title: "Egalitarian", bolded: "People are valued for their contributions to society as the concept of wealth as been eliminated altogether, and social mobility is achievable for all."},
-  {title: "Collectivist", bolded: "There is a strong sense of social cohesion and belonging. People recognize that their well-being is interconnected with that of others and the planet as a whole."},
+  {title: "Collectivist", bolded: "There is a strong value placed on social cohesion and belonging. People recognize that their well-being is wholly interconnected with others and the planet."},
   {title: "Inclusive", bolded: "People from diverse backgrounds contribute to community decision-making, while centralized governments distribute resources to local enclaves to use as they see fit."},
   {title: "Progressive", bolded: "Excess resources are channeled towards those with the greatest need, but attempts to reduce inequality spur continuous debate over the concept of need."},
   {title: "Auspicious", bolded: "It was decided that nothing is more fair than the whims of luck, as we embraced the uncertainty and unpredictability of the future."},
-  {title: "Competitive", bolded: "Rewards only last for so long as continuous competition and evaluation create isolation and stress for those on top, and endless struggle for those left behind."},
+  {title: "Competitive", bolded: "Skill of body and mind are held aloft as ideal, leading to continuous competition and evaluation creating isolation and stress for those on top, and endless struggle for those left behind."},
   {title: "Nepotism", bolded: "The well connected are made into powerful and charismatic leaders; more adept at cultivating alliances and rapport than systems and structure."},
-  {title: "Aristocratic", bolded: "The masses live vicariously through the eyes and dalliances of elite families as each dominates the cultural and economic framework of society."},
-  {title: "Dominant", bolded: "The gap between the rich and the poor has grown into an uncrossable chasm, leaving our bodies and minds broken under the shackles of exploitation."},
+  {title: "Aristocratic", bolded: "The masses live remotely through the eyes and dalliances of elite families as each dominates the cultural and economic framework of society with imagery and charisma."},
+  {title: "Dominant", bolded: "The gap between the rich and the poor has grown into an uncrossable chasm, leaving our bodies and minds broken under the shackles of exploitation as the mantra of greed consumes us all."},
 ];
 
 let climateBlurb = [
@@ -582,14 +583,14 @@ function setFuture(){
 function showFuture() {
   const doc = document.querySelector("#future-container");
 
-  if (finalOutputAge <= 0) {
+  if (finalOutputCounter <= 0) {
     //reset final output values
     doc.style.display = "none";
     finalOutput = false;
-    finalOutputAge = 30;
+    finalOutputCounter = finalOutputAge;
   } else {
     doc.style.display = "flex";
-    finalOutputAge -= .5;
+    finalOutputCounter -= .5;
   }
 
 }
