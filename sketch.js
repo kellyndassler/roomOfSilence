@@ -19,11 +19,15 @@
 // http://makeabilitylab.io/
 //
 // We also adapted code by Addie Barron from https://github.com/addiebarron/chladni.
-//
+// And code examples from MediaPipe/Google gesture recognition.
 
+// import * as serialComm from './serialComm.js';
+import vision from "https://cdn.skypack.dev/@mediapipe/tasks-vision@latest";
+const { GestureRecognizer, FilesetResolver } = vision;
 let pHtmlMsg;
 let serialOptions = { baudRate: 9600 };
 let serial;
+let serialTwo;
 
 let handPoseModel;
 let video;
@@ -36,12 +40,15 @@ const MIN_TIME_BETWEEN_TRANSMISSIONS_MS = 50; // 50 ms is ~20 Hz
 
 //particles visualization variables
 let particles, sliders, m, n, v, N;
-let equity, surveil, uniColor;
+let equity = 0, surveil = 0, uniColor = 0;
 
 //arduino input
 let tempQueue = [];
 let rotaryVals = [];
 let buttonStatus = [];
+let gestureVals = [];
+let gestureCounter = 0;
+let handPresent = false;
 let freezeScreenVal = false;
 
 let particlesCanvas;
@@ -65,8 +72,8 @@ let minWalk = 0.002;
 
 const settings = {
   nParticles: 10000,
-  particlesCanvasSize: [640, 500],
-  videoCanvasSize: [640, 500],
+  particlesCanvasSize: [1000, 900],
+  // videoCanvasSize: [640, 500],
 };
 
 let devicesList;
@@ -76,78 +83,219 @@ const pi = 3.1415926535;
 
 // chladni 2D closed-form solution - returns between -1 and 1
 const chladni = (x, y, a, b, m, n, sketch) =>
-  a * sketch.sin(pi * n * x) * sketch.sin(pi * m * y) +
+  a *  sketch.sin(pi * n * x) *  sketch.sin(pi * m * y) +
   b * sketch.sin(pi * m * x) * sketch.sin(pi * n * y);
 
-/**
- * Callback function called by ml5.js HandPose when the HandPose model is ready
- * Will be called once and only once
- */
-function onHandPoseModelReady() {
-  console.log("HandPose model ready!");
-  isHandPoseModelInitialized = true;
+
+const demosSection = document.getElementById("demos");
+let gestureRecognizer;
+let runningMode = "IMAGE";
+let enableWebcamButton;
+let webcamRunning = false;
+const videoHeight = "360px";
+const videoWidth = "480px";
+
+async function runDemo() {
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+  )
+  gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath:
+        "https://storage.googleapis.com/mediapipe-tasks/gesture_recognizer/gesture_recognizer.task"
+    },
+    runningMode: runningMode
+  })
+  demosSection.classList.remove("invisible")
+}
+runDemo();
+
+const videoGesture = document.getElementById("webcam")
+videoGesture.style.display = "none";
+console.log(videoGesture, "videoGesture");
+// const canvasElement = document.getElementById("output_canvas")
+// const canvasCtx = canvasElement.getContext("2d")
+const gestureOutput = document.getElementById("gesture_output");
+// var hideVideo = document.getElementsByClassName("webcam")[0];
+// hideVideo.style.display = "none";
+
+// Check if webcam access is supported.
+function hasGetUserMedia() {
+  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
 }
 
-/**
- * Callback function called by ml5.js HandPose when a pose has been detected
- */
-function onNewHandPosePrediction(predictions) {
-  if (predictions && predictions.length > 0) {
-    curHandPose = predictions[0];
-    // Grab the palm's x-position and normalize it to [0, 1]
-    const palmBase = curHandPose.landmarks[0];
-    palmXNormalized = palmBase[0] / videoSketch.width;
+// If webcam supported, add event listener to button for when user
+// wants to activate it.
+if (hasGetUserMedia()) {
+  enableWebcamButton = document.getElementById("webcamButton")
+  enableWebcamButton.addEventListener("click", enableCam)
+} else {
+  console.warn("getUserMedia() is not supported by your browser")
+}
 
+// Enable the live webcam view and start detection.
+function enableCam(event) {
+  if (!gestureRecognizer) {
+    alert("Please wait for gestureRecognizer to load")
+    return
+  }
 
-    //for arduino code output on hand recognition
-    if (serial.isOpen()) {
-      // const outputData = nf(palmXNormalized, 1, 4);
-      // const timeSinceLastTransmitMs =
-      //   videoSketch.millis() - timestampLastTransmit;
-      // if (timeSinceLastTransmitMs > MIN_TIME_BETWEEN_TRANSMISSIONS_MS) {
-      //   serial.writeLine(outputData);
-      //   timestampLastTransmit = videoSketch.millis();
-      // } else {
-      //   console.log(
-      //     "Did not send  '" +
-      //       outputData +
-      //       "' because time since last transmit was " +
-      //       timeSinceLastTransmitMs +
-      //       "ms"
-      //   );
-      // }
-    }
+  if (webcamRunning === true) {
+    webcamRunning = false
+    enableWebcamButton.innerText = "ENABLE PREDICTIONS"
   } else {
-    curHandPose = null;
+    webcamRunning = true
+    enableWebcamButton.innerText = "DISABLE PREDICITONS"
+  }
+
+  // getUsermedia parameters.
+  const constraints = {
+    video: true
+  }
+
+  // Activate the webcam stream.
+  navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+    videoGesture.srcObject = stream;
+    videoGesture.addEventListener("loadeddata", predictWebcam);
+  })
+}
+
+async function predictWebcam() {
+  const webcamElement = document.getElementById("webcam")
+  // Now let's start detecting the stream.
+  if (runningMode === "IMAGE") {
+    runningMode = "VIDEO"
+    await gestureRecognizer.setOptions({ runningMode: runningMode })
+  }
+  let nowInMs = Date.now()
+  const results = gestureRecognizer.recognizeForVideo(videoGesture, nowInMs)
+
+  // canvasCtx.save()
+  // canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height)
+
+  // canvasElement.style.height = videoHeight
+  webcamElement.style.height = videoHeight
+  // canvasElement.style.width = videoWidth
+  webcamElement.style.width = videoWidth
+  if (results.landmarks) {
+    for (const landmarks of results.landmarks) {
+      // drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+      //   color: "#00FF00",
+      //   lineWidth: 5
+      // })
+      // drawLandmarks(canvasCtx, landmarks, { color: "#FF0000", lineWidth: 2 })
+    }
+  }
+  // canvasCtx.restore()
+  let gestureName = "";
+  if (results.gestures.length > 0) {
+    //if hand recognized, flash lights green or blue
+    if(serial.isOpen()){
+      const outputData =  1;
+      const timeSinceLastTransmitMs = millis() - timestampLastTransmit;
+      if(timeSinceLastTransmitMs > MIN_TIME_BETWEEN_TRANSMISSIONS_MS){
+        serial.writeLine(outputData); 
+        timestampLastTransmit = millis();
+      }else{
+        console.log("Did not send  '" + outputData + "' because time since last transmit was " 
+                    + timeSinceLastTransmitMs + "ms");
+      }
+    }
+    gestureOutput.style.display = "block";
+    gestureOutput.style.width = videoWidth
+    gestureName = results.gestures[0][0].categoryName;
+    gestureOutput.innerText =
+      "GestureRecognizer: " +
+      gestureName +
+      "\n Confidence: " +
+      Math.round(parseFloat(results.gestures[0][0].score) * 100) +
+      "%"
+  } else {
+    //if no hand, then output white
+    gestureOutput.style.display = "none";
+  }
+  //if gesture is open palm, increase with each recogition, if gesture is closed palm, decrease 
+  if(gestureName === "Open_Palm"){
+    console.log("open palm");
+    gestureVals.push(1);
+  } else if (gestureName === "Closed_Fist"){
+    console.log("fist");
+    gestureVals.push(-1);
+  };
+  // Call this function again to keep predicting when the browser is ready.
+  if (webcamRunning === true) {
+    window.requestAnimationFrame(predictWebcam)
   }
 }
+
+// /**
+//  * Callback function called by ml5.js HandPose when a pose has been detected
+//  */
+// function onNewHandPosePrediction(predictions) {
+//   if (predictions && predictions.length > 0) {
+//     curHandPose = predictions[0];
+//     // Grab the palm's x-position and normalize it to [0, 1]
+//     const palmBase = curHandPose.landmarks[0];
+//     palmXNormalized = palmBase[0] / videoSketch.width;
+//     //TODO: gesture code
+
+//     //for arduino code output on hand recognition
+//     if (serial.isOpen()) {
+//       // serialWriteLightData(sketch, "gesture", v);
+//       // const outputData = nf(palmXNormalized, 1, 4);
+//       // const timeSinceLastTransmitMs =
+//       //   videoSketch.millis() - timestampLastTransmit;
+//       // if (timeSinceLastTransmitMs > MIN_TIME_BETWEEN_TRANSMISSIONS_MS) {
+//       //   serial.writeLine(outputData);
+//       //   timestampLastTransmit = videoSketch.millis();
+//       // } else {
+//       //   console.log(
+//       //     "Did not send  '" +
+//       //       outputData +
+//       //       "' because time since last transmit was " +
+//       //       timeSinceLastTransmitMs +
+//       //       "ms"
+//       //   );
+//       // }
+//     }
+//   } else {
+//     curHandPose = null;
+//   }
+// }
 
 // const GE = new fp.GestureEstimator([
 //   fp.Gestures.VictoryGesture,
 //   fp.Gestures.ThumbsUpGesture
 // ]);
 
-const setupHandPose = async (video, videoSketch) => {
-  //Get handpose model from ml5 library
-  handPoseModel = ml5.handpose(video, onHandPoseModelReady);
-  // Call onNewHandPosePrediction every time a new handPose is predicted
-  handPoseModel.on("predict", onNewHandPosePrediction);
-  // const model = await handpose.load();
-  // const predictions = await model.estimateHands(video, true);
-  // const estimatedGestures = GE.estimate(predictions.landmarks, 8.5);
-  // console.log("gestures", estimatedGestures);
-};
+
+// const SerialEvents = Object.freeze({
+//   CONNECTION_OPENED: "New connection opened",
+//   CONNECTION_CLOSED: "Connection closed",
+//   DATA_RECEIVED: "New data received",
+//   ERROR_OCCURRED: "Error occurred",
+//   });
 
 const setupWebSerial = () => {
   // Setup Web Serial using serial.js
+  // serial = new serialComm.Serial();
   serial = new Serial();
+
   serial.on(SerialEvents.CONNECTION_OPENED, onSerialConnectionOpened);
   serial.on(SerialEvents.CONNECTION_CLOSED, onSerialConnectionClosed);
   serial.on(SerialEvents.DATA_RECEIVED, onSerialDataReceived);
   serial.on(SerialEvents.ERROR_OCCURRED, onSerialErrorOccurred);
 
+  serialTwo = new Serial();
+
+  // serialTwo.on(SerialEvents.CONNECTION_OPENED, onSerialConnectionOpened);
+  // serialTwo.on(SerialEvents.CONNECTION_CLOSED, onSerialConnectionClosed);
+  // serialTwo.on(SerialEvents.DATA_RECEIVED, onSerialDataReceived);
+  // serialTwo.on(SerialEvents.ERROR_OCCURRED, onSerialErrorOccurred);
+
   // If we have previously approved ports, attempt to connect with them
   serial.autoConnectAndOpenPreviouslyApprovedPort(serialOptions);
+  serialTwo.autoConnectAndOpenPreviouslyApprovedPort(serialOptions);
 };
 
 const setupParticles = (sketch) => {
@@ -191,6 +339,7 @@ class Particle {
 
   move(sketch) {
     // what is our chladni value i.e. how much are we vibrating? (between -1 and 1, zeroes are nodes)
+    // console.log("sketchWidth", sketch.width);
     let mMap = sketch.map(
       sketch.abs((sketch.width / 4) * this.x),
       0,
@@ -397,37 +546,37 @@ class Particle {
   }
 }
 
-function drawHand(handPose, videoSketch) {
-  // Draw keypoints. While each keypoints supplies a 3D point (x,y,z), we only draw
-  // the x, y point.
-  for (let j = 0; j < handPose.landmarks.length; j += 1) {
-    const landmark = handPose.landmarks[j];
-    videoSketch.fill(0, 255, 0, 200);
-    videoSketch.noStroke();
-    videoSketch.circle(landmark[0], landmark[1], 10);
-  }
-}
+// function drawHand(handPose, videoSketch) {
+//   // Draw keypoints. While each keypoints supplies a 3D point (x,y,z), we only draw
+//   // the x, y point.
+//   for (let j = 0; j < handPose.landmarks.length; j += 1) {
+//     const landmark = handPose.landmarks[j];
+//     videoSketch.fill(0, 255, 0, 200);
+//     videoSketch.noStroke();
+//     videoSketch.circle(landmark[0], landmark[1], 10);
+//   }
+// }
 
-function drawBoundingBox(handPose, videoSketch) {
-  // Draw hand pose bounding box
-  const bb = handPose.boundingBox;
-  const bbWidth = bb.bottomRight[0] - bb.topLeft[0];
-  const bbHeight = bb.bottomRight[1] - bb.topLeft[1];
-  videoSketch.noFill();
-  videoSketch.stroke("red");
-  videoSketch.rect(bb.topLeft[0], bb.topLeft[1], bbWidth, bbHeight);
+// function drawBoundingBox(handPose, videoSketch) {
+//   // Draw hand pose bounding box
+//   const bb = handPose.boundingBox;
+//   const bbWidth = bb.bottomRight[0] - bb.topLeft[0];
+//   const bbHeight = bb.bottomRight[1] - bb.topLeft[1];
+//   videoSketch.noFill();
+//   videoSketch.stroke("red");
+//   videoSketch.rect(bb.topLeft[0], bb.topLeft[1], bbWidth, bbHeight);
 
-  // Draw confidence
-  videoSketch.fill("red");
-  videoSketch.noStroke();
-  videoSketch.textAlign(videoSketch.LEFT, videoSketch.BOTTOM);
-  videoSketch.textSize(20);
-  videoSketch.text(
-    videoSketch.nfc(handPose.handInViewConfidence, 2),
-    bb.topLeft[0],
-    bb.topLeft[1]
-  );
-}
+//   // Draw confidence
+//   videoSketch.fill("red");
+//   videoSketch.noStroke();
+//   videoSketch.textAlign(videoSketch.LEFT, videoSketch.BOTTOM);
+//   videoSketch.textSize(20);
+//   videoSketch.text(
+//     videoSketch.nfc(handPose.handInViewConfidence, 2),
+//     bb.topLeft[0],
+//     bb.topLeft[1]
+//   );
+// }
 
 //redraw screen background
 const wipeScreen = (sketch) => {
@@ -436,46 +585,75 @@ const wipeScreen = (sketch) => {
   sketch.stroke(255);
 };
 
+let te = 0;
 //get slider value and change corresponding parameters
 const updateParams = (sketch) => {
-  equity = sliders.equity.value(); // 1 - 10
+  // equity = sliders.equity.value(); // 1 - 10
   // equity = 5;
-  // //equity arduino code
-  // while(rotaryVals.length > 0){
-  //   // Grab the least recent value of queue (first in first out)
-  //   // JavaScript is not multithreaded, so we need not lock the queue
-  //   // before reading/modifying.
-  //   let rotaryVal = rotaryVals.shift();
-  //   console.log("value", rotaryVal);
-  //   equity = rotaryVal;
-  // }
-  climate = sliders.climate.value(); // arduino temp sensor input 1- 10
-  // climate = onSerialDataReceived(parseFloat())
-  //climate temp code
-  // console.log(tempQueue);
-  // while(tempQueue.length > 0){
-  //   // Grab the least recent value of queue (first in first out)
-  //   // JavaScript is not multithreaded, so we need not lock the queue
-  //   // before reading/modifying.
-  //   let tempVal = tempQueue.shift();
-  //   console.log("value", tempVal);
-  //   climate = tempVal;
-  // }
-  surveil = sliders.surveil.value(); // 1 - 10
-  m = sketch.map(equity, 1, 10, 1, 40); //freq value
-  n = sketch.map(surveil, 1, 10, 1, 40); //freq value
-  //climate temp code
-  v = sketch.map(climate, 1, 10, 0.05, 0.001);
+  //equity arduino code
+  while (rotaryVals.length > 0) {
+    // Grab the least recent value of queue (first in first out)
+    // JavaScript is not multithreaded, so we need not lock the queue
+    // before reading/modifying.
+    let rotaryVal = rotaryVals.shift();
+    console.log("value", rotaryVal);
+    equity = rotaryVal;
+  }
+  // climate = sliders.climate.value(); // arduino temp sensor input 1- 10
+  // climate temp code
+  while (tempQueue.length > 0) {
+    // Grab the least recent value of queue (first in first out)
+    // JavaScript is not multithreaded, so we need not lock the queue
+    // before reading/modifying.
+    let tempVal = tempQueue.shift();
+    console.log("value", tempVal);
+    climate = tempVal;
+    te = tempVal;
+  }
+  //v = sketch.map(climate, 1, 10, 0.05, 0.001);
+  // TODO: convert to (1-10?) and correct mapping
   // v = sketch.map(climate, 440, 380, 0.05, 0.001); //vibrations of particles
-  N = sliders.num.value(); //num particles
-  //climate temp code
-  uniColor = sketch.map(climate, 1, 10, 0, 260);
-  // uniColor = sketch.map(climate, 440, 380, 0, 260);  //currentHue
+  // v = sketch.map(climate, 85, 115, 0.05, 0.001); //
+  // climate = te;
+    climate = te;
+  // if (climate != 0) {
+    v = sketch.map(climate, 115, 85, 0.05, 0.001); //
+    climate = te;
+    // console.log("climate after v", climate);
+    uniColor = sketch.map(climate, 115, 85, 0, 260);
+    climate = te;
+    // console.log("climate after unicolor", climate);
+  // }
+  // console.log("climate after v", climate);
+  m = sketch.map(equity, 0, 255, 1, 40); //freq value
+  equity = sketch.map(equity, 0, 255, 1, 10); //map 1-10 for ben's code
+  while (gestureVals.length > 0) {
+    // Grab the least recent value of queue (first in first out)
+    // JavaScript is not multithreaded, so we need not lock the queue
+    // before reading/modifying.
+    let gestureVal = gestureVals.shift();
+    console.log("gesture", gestureVal);
+    gestureCounter = gestureCounter + gestureVal;
+    console.log("surveil", gestureCounter);
+    if(gestureCounter > 10) {
+      gestureCounter = 10;
+    }if(gestureCounter < 1) {
+      gestureCounter = 1;
+    }
+    surveil = gestureCounter;
+    console.log("surveilFinal", surveil);
+  }
+  //  surveil = sliders.surveil.value(); // 1 - 10
+  console.log("surveilFinal", surveil);
+  n = sketch.map(surveil, 1, 10, 1, 40); //freq value
+  console.log("surveilFinal", surveil);
+  //surveil = sketch.map(surveil, 1, 10, 1, 10); //map 1-10 for ben's code
+  N = 5000; //num particles
+  climate = sketch.map(climate, 115, 85, 1, 10); //map 1-10 for ben's code
 };
 
 const moveParticles = (sketch) => {
   let movingParticles = particles.slice(0, N);
-
   // particle movement
   for (let i = movingParticles.length - 1; i >= 0; i--) {
     particles[i].move(sketch);
@@ -499,7 +677,10 @@ function getDevices(devices) {
     if (deviceInfo.kind == "videoinput") {
       console.log("Device name :", devices[i].label);
       console.log("DeviceID :", devices[i].deviceId);
-      if (devices[i].deviceId === "c4d0106361ecb67487d2f9cb7f4a62fda3661f1abae710e57a6bf5709442ce74") {
+      if (
+        devices[i].deviceId ===
+        "c4d0106361ecb67487d2f9cb7f4a62fda3661f1abae710e57a6bf5709442ce74"
+      ) {
         console.log("CHOSEN", devices[i].label);
         videoSource = devices[i].deviceId;
       }
@@ -507,117 +688,132 @@ function getDevices(devices) {
   }
 }
 
-const freezeScreen = (sketch, canvas) => {
-  while(buttonStatus.length > 0){
+const freezeScreen = (canvas) => {
+  while (buttonStatus.length > 0) {
     // Grab the least recent value of queue (first in first out)
     // JavaScript is not multithreaded, so we need not lock the queue
     // before reading/modifying.
     let buttonStatusVal = buttonStatus.shift();
     freezeScreenVal = buttonStatusVal;
-    
-    if(freezeScreenVal) {
+
+    if (freezeScreenVal) {
       // console.log("value", freezeScreenVal);
-      sketch.saveCanvas(canvas, 'sketchPhoto'+screenshotCounter, 'jpg');
+      saveCanvas(canvas, "sketchPhoto" + screenshotCounter, "jpg");
+      //TODO: upload to google drive via gapi
       screenshotCounter++;
     }
   }
-}
+};
+
+
 
 let particlesSketch = new p5((sketch) => {
-  sketch.setup = () => {
+  preload();
+  sketch.setup = () =>  {
     particlesCanvas = sketch.createCanvas(...settings.particlesCanvasSize);
-
+    // particlesCanvas.parent('sketch-container');
+    setupWebSerial();
     //set framerate for visualization
     sketch.frameRate(60);
-
     //set values for sliders
-    sliders = {
-      num: sketch.select("#numSlider"), // number of particles
-      equity: sketch.select("#equitySlider"),
-      climate: sketch.select("#climateSlider"),
-      surveil: sketch.select("#surveilSlider"),
-    };
+    // sliders = {
+    //   num: select("#numSlider"), // number of particles
+    //   equity: select("#equitySlider"),
+    //   climate: select("#climateSlider"),
+    //   surveil: select("#surveilSlider"),
+    // };
 
     //setup particles for visualization
     setupParticles(sketch);
+  };
+
+  sketch.keyPressed = () => {
+    let email = prompt("Please enter your email:", "fredolin@frog.co");
+    console.log("email " + email); //TODO: add gmail api and send email with image and selections
+    //TODO: possibly send visualization to slideshow via google drive or get email and name
+    sketch.saveCanvas(
+      particlesCanvas,
+      "frogPopPartyWorld " + email,
+      "jpg"
+    );
   };
 
   sketch.draw = () => {
     wipeScreen(sketch);
     updateParams(sketch);
     moveParticles(sketch);
-    freezeScreen(sketch, particlesCanvas);
+    // freezeScreen(sketch,particlesCanvas);
   };
-}, "left");
+ }, "left");
 
+// var videoSourceConstraints = {
+//   video: {
+//     deviceId: {
+//       exact: videoSource,
+//     },
+//   },
+// };
 
-var videoSourceConstraints = {
-  video: {
-  deviceId: {
-    exact: videoSource
-    },
-  }
-};
+// let videoSketch = new p5((videoSketch) => {
+//   // preload();
+//   videoSketch.setup = () => {
+//     videoSketch.createCanvas(...settings.videoCanvasSize);
+//     //setup web serial for arduino connection
+//     // setupWebSerial();
+//     // getPorts();
 
-let videoSketch = new p5((videoSketch) => {
-  preload();
-  videoSketch.setup = () => {
-    videoSketch.createCanvas(...settings.videoCanvasSize);
-    //setup web serial for arduino connection
-    setupWebSerial();
+//     // Add in a lil <p> element to provide messages. This is optional
+//     pHtmlMsg = videoSketch.createP(
+//       "Click anywhere on this page to open the serial connection dialog"
+//     );
 
-    // Add in a lil <p> element to provide messages. This is optional
-    pHtmlMsg = videoSketch.createP(
-      "Click anywhere on this page to open the serial connection dialog"
-    );
+//     //video setup
+//     video = videoSketch.createCapture(videoSourceConstraints);
+//     // Hide the video element, and just show the canvas
+//     video.hide();
 
-    //video setup
-    video = videoSketch.createCapture(videoSourceConstraints);
-    // Hide the video element, and just show the canvas
-    video.hide();
+//     //handpose model setup
+//     setupHandPose(video, videoSketch);
+//   };
 
-    //handpose model setup
-    setupHandPose(video, videoSketch);
-  };
+//   videoSketch.draw = () => {
+//     videoSketch.image(video, 0, 0, videoSketch.width, videoSketch.height);
 
-  videoSketch.draw = () => {
-    videoSketch.image(video, 0, 0, videoSketch.width, videoSketch.height);
+//     if (!isHandPoseModelInitialized) {
+//       videoSketch.background(100);
+//       videoSketch.push();
+//       videoSketch.textSize(32);
+//       videoSketch.textAlign(videoSketch.CENTER);
+//       videoSketch.fill(255);
+//       videoSketch.noStroke();
+//       videoSketch.text(
+//         "Waiting for HandPose model to load...",
+//         videoSketch.width / 2,
+//         videoSketch.height / 2
+//       );
+//       videoSketch.pop();
+//     }
 
-    if (!isHandPoseModelInitialized) {
-      videoSketch.background(100);
-      videoSketch.push();
-      videoSketch.textSize(32);
-      videoSketch.textAlign(videoSketch.CENTER);
-      videoSketch.fill(255);
-      videoSketch.noStroke();
-      videoSketch.text(
-        "Waiting for HandPose model to load...",
-        videoSketch.width / 2,
-        videoSketch.height / 2
-      );
-      videoSketch.pop();
-    }
+//     if (curHandPose) {
+//       drawHand(curHandPose, videoSketch);
+//       drawBoundingBox(curHandPose, videoSketch);
 
-    if (curHandPose) {
-      drawHand(curHandPose, videoSketch);
-      drawBoundingBox(curHandPose, videoSketch);
+//       // draw palm info
+//       videoSketch.noFill();
+//       videoSketch.stroke(255);
+//       const palmBase = curHandPose.landmarks[0];
+//       videoSketch.circle(palmBase[0], palmBase[1], kpSize);
 
-      // draw palm info
-      videoSketch.noFill();
-      videoSketch.stroke(255);
-      const palmBase = curHandPose.landmarks[0];
-      videoSketch.circle(palmBase[0], palmBase[1], kpSize);
-
-      videoSketch.noStroke();
-      videoSketch.fill(255);
-      videoSketch.text(
-        videoSketch.nf(palmXNormalized, 1, 4),
-        palmBase[0] + kpSize,
-        palmBase[1] + videoSketch.textSize() / 2
-      );
-    }
-  };
-}, "right");
+//       videoSketch.noStroke();
+//       videoSketch.fill(255);
+//       videoSketch.text(
+//         videoSketch.nf(palmXNormalized, 1, 4),
+//         palmBase[0] + kpSize,
+//         palmBase[1] + videoSketch.textSize() / 2
+//       );
+//     }
+//   };
+// }, "right");
 
 /**
  * Callback function by serial.js when there is an error on web serial
@@ -659,24 +855,31 @@ function onSerialDataReceived(eventSender, newData) {
   console.log("onSerialDataReceived", newData);
   pHtmlMsg.html("onSerialDataReceived: " + newData);
 
+  let nextArduinoInput = newData;
+  //let incomingFloatValue;
+  // let incomingFloatValue = parseFloat(nextArduinoInput);
+  // console.log("incoming", incomingFloatValue);
   //temperature code
   // tempQueue.push(parseFloat(newData));
-
+  // console.log(tempQueue);
+  if (nextArduinoInput.includes("temp")) {
+    incomingFloatValue = nextArduinoInput.match(/(\d+)/)[0];
+    tempQueue.push(incomingFloatValue);
+    console.log("hit temp ", incomingFloatValue);
+  }
   //equity rotary arduino code
-  // rotaryVals.push(parseFloat(newData));
-
+  if (nextArduinoInput.includes("dial")) {
+    incomingFloatValue = nextArduinoInput.match(/(\d+)/)[0];
+    rotaryVals.push(incomingFloatValue);
+    console.log("hit dial", incomingFloatValue);
+  }
   //button arduino code
-  buttonStatus.push(parseFloat(newData));
+  if (nextArduinoInput.includes("button")) {
+    incomingFloatValue = nextArduinoInput.match(/(\d+)/)[0];
+    buttonStatus.push(incomingFloatValue);
+    console.log("hit button ", incomingFloatValue);
+  }
 }
-
-/**
- * Called automatically by the browser through p5.js when mouse clicked
- */
-// function mouseClicked() {
-//   if (!serial.isOpen()) {
-//     serial.connectAndOpen(null, serialOptions);
-//   }
-// }
 
 /**
  * Called by open serial settings button from command palette
@@ -684,5 +887,8 @@ function onSerialDataReceived(eventSender, newData) {
 function openSerial() {
   if (!serial.isOpen()) {
     serial.connectAndOpen(null, serialOptions);
+  }
+  if (!serialTwo.isOpen()) {
+    serialTwo.connectAndOpen(null, serialOptions);
   }
 }
