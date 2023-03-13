@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.3.1/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.5.0/p5.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/makeabilitylab/p5js/_libraries/serial.js"></script>
     <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js"
+    crossorigin="anonymous"></script>
     <link rel="stylesheet" type="text/css" href="css\style.css" />
     <meta charset="utf-8" />
   </head>
 
   <body>
-    <script src="sketch.js"></script>
+    <script type="module" src="sketch.js"></script>
+    <!-- <script src="serialComm.js"></script> -->
     <header>
       <h1>Settings</h1>
-      <form id="settings">
+      <!-- <form id="settings">
         <label for="equitySlider">Distribution - Accumulation:</label>
         <input
           name="equitySlider"
@@ -56,7 +59,11 @@
           step="500"
           value="2000"
         />
-      </form>
+      </form> -->
+      <button id="webcamButton" class="mdc-button mdc-button--raised">
+        <span class="mdc-button__ripple"></span>
+        <span class="mdc-button__label">ENABLE WEBCAM</span>
+      </button>
       <button onclick="openSerial()">Open Serial</button>
       <button onclick="setFuture()">Set Futures</button>
       <button onmousedown="blackout()" onmouseup="endBlackout()">Blackout</button>
@@ -91,7 +98,26 @@
     </div>
     <div id="sketch-container">
       <div id="left"></div>
-      <div id="right"></div>
+      <!-- <div id="right"></div> -->
+    </div>
+    <section id="demos" class="invisible">
+      <!-- <h2>Demo: Recognize gestures</h2>
+      <p><em>Click on an image below</em> to identify the gestures in the image.</p> -->
+    
+      <!-- <div class="detectOnClick">
+        <img src="https://assets.codepen.io/9177687/idea-gcbe74dc69_1920.jpg" crossorigin="anonymous" title="Click to get recognize!" />
+        <p class="classification removed">
+      </div>
+      <div class="detectOnClick">
+        <img src="https://assets.codepen.io/9177687/thumbs-up-ga409ddbd6_1.png" crossorigin="anonymous" title="Click to get recognize!" />
+        <p class="classification removed">
+      </div> -->
+    <div id="liveView" class="videoView">
+      <div style="position: relative;">
+        <video id="webcam" autoplay></video>
+        <!-- <canvas class="output_canvas" id="output_canvas" width="1280" height="720" style="position: absolute; left: 0px; top: 0px;"></canvas> -->
+        <p id='gesture_output' class="output">
+      </div>
     </div>
   </body>
 </html>
