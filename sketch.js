@@ -204,9 +204,16 @@ function enableCam(event) {
   const constraints = {
     video: true
   }
+  const videoSourceConstraints = {
+    video: {
+      deviceId: {
+        exact: videoSource,
+      },
+    },
+  };
 
   // Activate the webcam stream.
-  navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+  navigator.mediaDevices.getUserMedia(videoSourceConstraints).then(function(stream) {
     videoGesture.srcObject = stream;
     videoGesture.addEventListener("loadeddata", predictWebcam);
   })
@@ -254,7 +261,7 @@ async function predictWebcam() {
       }
     }
     gestureOutput.style.display = "block";
-    gestureOutput.style.width = videoWidth
+    gestureOutput.style.width = videoWidth;
     gestureName = results.gestures[0][0].categoryName;
     gestureOutput.innerText =
       "GestureRecognizer: " +
@@ -857,6 +864,7 @@ let particlesSketch = new p5((sketch) => {
       "frogPopPartyWorld " + email,
       "jpg"
     );
+    setFuture();
   };
 
   sketch.draw = () => {
@@ -877,13 +885,13 @@ let particlesSketch = new p5((sketch) => {
   };
  }, "left");
 
-// var videoSourceConstraints = {
-//   video: {
-//     deviceId: {
-//       exact: videoSource,
-//     },
-//   },
-// };
+var videoSourceConstraints = {
+  video: {
+    deviceId: {
+      exact: videoSource,
+    },
+  },
+};
 
 // let videoSketch = new p5((videoSketch) => {
 //   // preload();
@@ -1027,6 +1035,12 @@ function openSerial() {
 function blackout() {
   document.getElementById("scrim").style.visibility='visible';
 }
+
 function endBlackout() {
   document.getElementById("scrim").style.visibility='hidden';
 }
+
+let signup = event => {
+  console.log(event.currentTarget);
+};
+document.querySelector('button').addEventListener("click", signup)
